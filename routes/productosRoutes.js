@@ -11,6 +11,18 @@ function validateProductData(req, res, next) {
   next();
 }
 
+// Función para convertir BigInt a string en objetos
+const convertBigIntToString = (obj) => {
+  for (let key in obj) {
+    if (typeof obj[key] === 'bigint') {
+      obj[key] = obj[key].toString();
+    } else if (typeof obj[key] === 'object' && obj[key] !== null) {
+      convertBigIntToString(obj[key]);
+    }
+  }
+  return obj;
+};
+
 // Crear un nuevo producto
 router.post('/', validateProductData, async (req, res) => {
   try {
@@ -25,12 +37,7 @@ router.post('/', validateProductData, async (req, res) => {
         },
       },
     });
-    // Convertir BigInt a string
-    res.status(201).json({ 
-      ...nuevoProducto, 
-      id: nuevoProducto.id.toString(), 
-      categoria_id: nuevoProducto.categoria_id.toString() 
-    });
+    res.status(201).json(convertBigIntToString(nuevoProducto));
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Error al crear el producto', details: error.message });
@@ -43,15 +50,7 @@ router.get('/', async (req, res) => {
     const productos = await prisma.productos.findMany({
       include: { categoria: true },
     });
-    // Convertir BigInt a string
-    const modifiedProductos = productos.map((producto) => ({
-      ...producto,
-      id: producto.id.toString(),
-      categoria_id: producto.categoria_id.toString(),
-      categoria: producto.categoria
-        ? { ...producto.categoria, id: producto.categoria.id.toString() }
-        : null,
-    }));
+    const modifiedProductos = productos.map(producto => convertBigIntToString(producto));
     res.json(modifiedProductos);
   } catch (error) {
     res.status(500).json({ error: 'Error al obtener los productos', details: error.message });
@@ -73,15 +72,7 @@ router.get('/:id', async (req, res) => {
     if (!producto) {
       return res.status(404).json({ error: 'Producto no encontrado' });
     }
-    // Convertir BigInt a string
-    res.json({
-      ...producto,
-      id: producto.id.toString(),
-      categoria_id: producto.categoria_id.toString(),
-      categoria: producto.categoria
-        ? { ...producto.categoria, id: producto.categoria.id.toString() }
-        : null,
-    });
+    res.json(convertBigIntToString(producto));
   } catch (error) {
     res.status(500).json({ error: 'Error al obtener el producto', details: error.message });
   }
@@ -108,12 +99,7 @@ router.put('/:id', validateProductData, async (req, res) => {
         },
       },
     });
-    // Convertir BigInt a string
-    res.json({ 
-      ...productoActualizado, 
-      id: productoActualizado.id.toString(), 
-      categoria_id: productoActualizado.categoria_id.toString() 
-    });
+    res.json(convertBigIntToString(productoActualizado));
   } catch (error) {
     if (error.code === 'P2025') {
       return res.status(404).json({ error: 'Producto no encontrado' });
@@ -139,6 +125,25 @@ router.delete('/:id', async (req, res) => {
       return res.status(404).json({ error: 'Producto no encontrado' });
     }
     res.status(500).json({ error: 'Error al eliminar el producto', details: error.message });
+  }
+});
+
+// Obtener productos por categoría
+router.get('/categoria/:categoriaId', async (req, res) => {
+  const categoriaId = parseInt(req.params.categoriaId);
+  if (isNaN(categoriaId)) {
+    return res.status(400).json({ error: 'ID de categoría inválido' });
+  }
+
+  try {
+    const productos = await prisma.productos.findMany({
+      where: { categoria_id: BigInt(categoriaId) },
+      include: { categoria: true },
+    });
+    const modifiedProductos = productos.map(producto => convertBigIntToString(producto));
+    res.json(modifiedProductos);
+  } catch (error) {
+    res.status(500).json({ error: 'Error al obtener los productos por categoría', details: error.message });
   }
 });
 

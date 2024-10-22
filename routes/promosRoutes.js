@@ -36,6 +36,8 @@ router.get('/', async (req, res) => {
         res.json(modifiedPromos);
     } catch (error) {
         res.status(500).json({ error: 'Error al obtener las promos', details: error.message });
+        console.log(error);
+        
     }
 });
 

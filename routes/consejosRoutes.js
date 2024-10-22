@@ -2,22 +2,42 @@ const express = require('express');
 const prisma = require('../prisma/prismaClient');
 const router = express.Router();
 
-// Crear un nuevo consejo
-router.post('/consejos', async (req, res) => {
+// Middleware para validar los datos del consejo
+function validateConsejoData(req, res, next) {
   const { titulo, descripcion, imagen, categoria_id } = req.body;
+  if (!titulo || !descripcion || !imagen || !categoria_id) {
+    return res.status(400).json({ error: 'Todos los campos son requeridos' });
+  }
+  next();
+}
+
+// Función para convertir BigInt a string en objetos
+const convertBigIntToString = (obj) => {
+  for (let key in obj) {
+    if (typeof obj[key] === 'bigint') {
+      obj[key] = obj[key].toString();
+    } else if (typeof obj[key] === 'object' && obj[key] !== null) {
+      convertBigIntToString(obj[key]);
+    }
+  }
+  return obj;
+};
+
+// Crear un nuevo consejo
+router.post('/', validateConsejoData, async (req, res) => {
   try {
+    const { titulo, descripcion, imagen, categoria_id } = req.body;
     const nuevoConsejo = await prisma.consejos.create({
       data: {
         titulo,
         descripcion,
         imagen,
         categoria: {
-          connect: { id: categoria_id },
+          connect: { id: BigInt(categoria_id) },
         },
       },
     });
-    // Convertir id de BigInt a String si es necesario
-    res.status(201).json({ ...nuevoConsejo, id: nuevoConsejo.id.toString() });
+    res.status(201).json(convertBigIntToString(nuevoConsejo));
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Error al crear el consejo', details: error.message });
@@ -25,15 +45,12 @@ router.post('/consejos', async (req, res) => {
 });
 
 // Obtener todos los consejos
-router.get('/consejos', async (req, res) => {
+router.get('/', async (req, res) => {
   try {
-    const consejos = await prisma.consejos.findMany({ include: { categoria: true } });
-    // Convertir id de BigInt a String
-    const modifiedConsejos = consejos.map(consejo => ({
-      ...consejo,
-      id: consejo.id.toString(),
-      categoria: consejo.categoria ? { ...consejo.categoria, id: consejo.categoria.id.toString() } : null,
-    }));
+    const consejos = await prisma.consejos.findMany({
+      include: { categoria: true },
+    });
+    const modifiedConsejos = consejos.map(consejo => convertBigIntToString(consejo));
     res.json(modifiedConsejos);
   } catch (error) {
     res.status(500).json({ error: 'Error al obtener los consejos', details: error.message });
@@ -41,7 +58,7 @@ router.get('/consejos', async (req, res) => {
 });
 
 // Obtener un consejo por ID
-router.get('/consejos/:id', async (req, res) => {
+router.get('/:id', async (req, res) => {
   const id = parseInt(req.params.id);
   if (isNaN(id)) {
     return res.status(400).json({ error: 'ID inválido' });
@@ -49,38 +66,40 @@ router.get('/consejos/:id', async (req, res) => {
 
   try {
     const consejo = await prisma.consejos.findUnique({
-      where: { id },
+      where: { id: BigInt(id) },
       include: { categoria: true },
     });
-    if (!consejo) return res.status(404).json({ error: 'Consejo no encontrado' });
-    res.json({ ...consejo, id: consejo.id.toString(), categoria: consejo.categoria ? { ...consejo.categoria, id: consejo.categoria.id.toString() } : null });
+    if (!consejo) {
+      return res.status(404).json({ error: 'Consejo no encontrado' });
+    }
+    res.json(convertBigIntToString(consejo));
   } catch (error) {
     res.status(500).json({ error: 'Error al obtener el consejo', details: error.message });
   }
 });
 
 // Actualizar un consejo
-router.put('/consejos/:id', async (req, res) => {
+router.put('/:id', validateConsejoData, async (req, res) => {
   const id = parseInt(req.params.id);
-  const { titulo, descripcion, imagen, categoria_id } = req.body;
-
   if (isNaN(id)) {
     return res.status(400).json({ error: 'ID inválido' });
   }
 
+  const { titulo, descripcion, imagen, categoria_id } = req.body;
+
   try {
     const consejoActualizado = await prisma.consejos.update({
-      where: { id },
+      where: { id: BigInt(id) },
       data: {
         titulo,
         descripcion,
         imagen,
         categoria: {
-          connect: { id: categoria_id },
+          connect: { id: BigInt(categoria_id) },
         },
       },
     });
-    res.json({ ...consejoActualizado, id: consejoActualizado.id.toString() });
+    res.json(convertBigIntToString(consejoActualizado));
   } catch (error) {
     if (error.code === 'P2025') {
       return res.status(404).json({ error: 'Consejo no encontrado' });
@@ -90,16 +109,15 @@ router.put('/consejos/:id', async (req, res) => {
 });
 
 // Eliminar un consejo
-router.delete('/consejos/:id', async (req, res) => {
+router.delete('/:id', async (req, res) => {
   const id = parseInt(req.params.id);
-
   if (isNaN(id)) {
     return res.status(400).json({ error: 'ID inválido' });
   }
 
   try {
     await prisma.consejos.delete({
-      where: { id },
+      where: { id: BigInt(id) },
     });
     res.status(204).send();
   } catch (error) {
@@ -107,6 +125,25 @@ router.delete('/consejos/:id', async (req, res) => {
       return res.status(404).json({ error: 'Consejo no encontrado' });
     }
     res.status(500).json({ error: 'Error al eliminar el consejo', details: error.message });
+  }
+});
+
+// Obtener consejos por categoría
+router.get('/categoria/:categoriaId', async (req, res) => {
+  const categoriaId = parseInt(req.params.categoriaId);
+  if (isNaN(categoriaId)) {
+    return res.status(400).json({ error: 'ID de categoría inválido' });
+  }
+
+  try {
+    const consejos = await prisma.consejos.findMany({
+      where: { categoria_id: BigInt(categoriaId) },
+      include: { categoria: true },
+    });
+    const modifiedConsejos = consejos.map(consejo => convertBigIntToString(consejo));
+    res.json(modifiedConsejos);
+  } catch (error) {
+    res.status(500).json({ error: 'Error al obtener los consejos por categoría', details: error.message });
   }
 });
 

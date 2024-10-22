@@ -1,0 +1,123 @@
+// Define la fuente de datos que será PostgreSQL y se conectará a la URL de la base de datos en Supabase
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+
+}
+
+// Generador del cliente Prisma
+generator client {
+  provider = "prisma-client-js"
+}
+model Productos {
+  id           BigInt   @id @default(autoincrement())
+  titulo       String
+  imagen       String
+  descripcion  String
+  categoria_id BigInt   // Esta es la clave foránea correcta, reflejando la base de datos
+  categoria    CategoriaProductos @relation(fields: [categoria_id], references: [id])
+}
+
+model CategoriaProductos {
+  id          BigInt   @id @default(autoincrement())
+  nombre      String
+  descripcion String?
+  imagen      String?
+  Productos   Productos[]
+}
+
+
+
+
+model CategoriaConsejos {
+  id          BigInt  @id @default(autoincrement())
+  nombre      String
+  descripcion String
+  imagen      String
+  Consejos    Consejos[]
+}
+
+model Consejos {
+  id           BigInt  @id @default(autoincrement())
+  titulo       String
+  descripcion  String
+  imagen       String
+  categoria_id BigInt   // Cambiado de categoriaId a categoria_id
+  categoria    CategoriaConsejos @relation(fields: [categoria_id], references: [id]) // Ajuste en la relación
+}
+
+
+model Usuarios {
+  id         BigInt @id @default(autoincrement())
+  usuario    String
+  contrasena String
+}
+
+model Footer {
+  id          BigInt  @id @default(autoincrement())
+  email       String
+  telefono    String
+  direccion   String
+  logo_img    String
+  nombre_dueno String
+}
+
+model CategoriaGaleria {
+  id          BigInt  @id @default(autoincrement())
+  nombre      String
+  descripcion String
+  imagen      String
+  Galeria     Galeria[]
+}
+
+model Galeria {
+  id            BigInt @id @default(autoincrement())
+  foto_antes    String
+  foto_despues  String
+  categoria_id  BigInt  // Cambiado de categoriaId a categoria_id
+  categoria     CategoriaGaleria @relation(fields: [categoria_id], references: [id]) // Ajuste en la relación
+}
+
+
+model Promos {
+  id          BigInt @id @default(autoincrement())
+  foto        String
+  titulo      String
+  descripcion String
+  fecha_fin   DateTime
+}
+
+model Encuestas {
+  id       BigInt @id @default(autoincrement())
+  pregunta String
+  bueno    BigInt
+  malo     BigInt
+  regular  BigInt
+}
+
+model Homepage {
+  id          BigInt @id @default(autoincrement())
+  descripcion String
+  foto_dueno  String
+  fotos_local Json
+}
+
+model CategoriaServicios {
+  id          BigInt @id @default(autoincrement())
+  nombre      String
+  descripcion String
+  imagen      String
+  servicios   Servicios[]
+}
+
+
+model Servicios {
+  id          BigInt @id @default(autoincrement())
+  titulo      String
+  descripcion String
+  imagen      String
+  categoria_id BigInt // Relación con CategoriaServicios
+  categoria   CategoriaServicios @relation(fields: [categoria_id], references: [id])
+}
+
+
