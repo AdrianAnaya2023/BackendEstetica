@@ -36,7 +36,7 @@ app.use(express.json());
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.use(cors({
-  origin: 'http://localhost:3001', // Permite solo solicitudes desde este origen
+  origin: 'http://localhost:3000', // Permite solo solicitudes desde este origen
   methods: ['GET', 'POST', 'PUT', 'DELETE'], // Métodos HTTP permitidos
   credentials: true, // Permite cookies de origen cruzado
 }));
