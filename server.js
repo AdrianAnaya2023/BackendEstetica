@@ -67,7 +67,7 @@ app.use((err, req, res, next) => {
   res.status(500).send('Algo salió mal!');
 });
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8080;
 const server = app.listen(PORT, () => console.log(`Servidor corriendo en http://localhost:${PORT}`));
 
 // Manejadores para cerrar Prisma correctamente al detener el servidor
