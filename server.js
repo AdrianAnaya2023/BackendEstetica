@@ -8,16 +8,12 @@ const prisma = require('./prisma/prismaClient'); // Importar Prisma Client confi
 const cors = require('cors');
 require('dotenv').config();
 
-
-
-
 // Importar todas las rutas
 const productosRoutes = require('./routes/productosRoutes');
 const categoriaProductosRoutes = require('./routes/categoriaProductosRoutes');
 const consejosRoutes = require('./routes/consejosRoutes');
 const categoriaConsejosRoutes = require('./routes/categoriaConsejosRoutes');
 const usuariosRoutes = require('./routes/usuariosRoutes');
-
 const galeriaRoutes = require('./routes/galeriaRoutes');
 const categoriaGaleriaRoutes = require('./routes/categoriaGaleriaRoutes');
 const promosRoutes = require('./routes/promosRoutes');
@@ -27,26 +23,23 @@ const categoriaServiciosRoutes = require('./routes/categoriaServiciosRoutes');
 const homepageRoutes = require('./routes/homepageRoutes');
 const footerRoutes = require('./routes/footerRoutes');
 
-
-
 app.use(express.json());
-
 
 // Configurar Swagger UI
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.use(cors({
-  origin: 'http://localhost:3000', // Permite solo solicitudes desde este origen
+  origin: '*', // Permitir solicitudes desde cualquier origen
   methods: ['GET', 'POST', 'PUT', 'DELETE'], // Métodos HTTP permitidos
   credentials: true, // Permite cookies de origen cruzado
 }));
+
 // Montar todas las rutas
 app.use('/api/productos', productosRoutes);
 app.use('/api', categoriaProductosRoutes);
 app.use('/api/consejos', consejosRoutes);
 app.use('/api/categorias-consejos', categoriaConsejosRoutes);
 app.use('/api/usuarios', usuariosRoutes);
-
 app.use('/api/galeria', galeriaRoutes);
 app.use('/api', categoriaGaleriaRoutes);
 app.use('/api/promos', promosRoutes);
@@ -55,8 +48,6 @@ app.use('/api/servicios', serviciosRoutes);
 app.use('/api/categorias-servicios', categoriaServiciosRoutes);
 app.use('/api', homepageRoutes);
 app.use('/api/footer', footerRoutes);
-
-
 
 // Ruta de verificación
 app.get('/', (req, res) => res.send('Servidor funcionando correctamente'));
