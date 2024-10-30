@@ -15,7 +15,6 @@ function validateUserData(req, res, next) {
 
 // Ruta para crear un nuevo usuario
 // Hashear contraseña antes de guardar el usuario
-// Ruta para crear un nuevo usuario
 router.post('/', validateUserData, async (req, res) => {
     try {
         // Hashear la contraseña
@@ -33,6 +32,7 @@ router.post('/', validateUserData, async (req, res) => {
         res.status(500).json({ error: 'Error al crear el usuario', details: error.message });
     }
 });
+
 // Ruta para obtener todos los usuarios
 router.get('/', async (req, res) => {
     try {
@@ -65,11 +65,13 @@ router.get('/:id', async (req, res) => {
 // Ruta para actualizar un usuario por ID
 router.put('/:id', validateUserData, async (req, res) => {
     try {
+        const hashedPassword = await bcrypt.hash(req.body.contrasena, 10);
+
         const usuarioActualizado = await prisma.usuarios.update({
             where: { id: parseInt(req.params.id) },
             data: {
                 usuario: req.body.usuario,
-                contrasena: req.body.contrasena
+                contrasena: hashedPassword // Hashear la contraseña al actualizar
             }
         });
         res.json({ ...usuarioActualizado, id: usuarioActualizado.id.toString() }); // Convertir BigInt id a string
@@ -96,7 +98,6 @@ router.delete('/:id', async (req, res) => {
     }
 });
 
-// Ruta de login
 // Ruta de login
 router.post('/login', async (req, res) => {
     const { usuario, contrasena } = req.body;
@@ -148,7 +149,5 @@ router.post('/login', async (req, res) => {
     }
 });
 
-
-
-  
 module.exports = router;
+
